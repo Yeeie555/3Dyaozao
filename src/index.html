@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>捏陶 · 手势陶艺手作</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --ym-bg:#f5efe6; --ym-bg-soft:#efe6d8; --ym-surface:#fff9f0;
+    --ym-ink-jiao:#201915; --ym-ink-nong:#3a2f28; --ym-ink-zhong:#6c5a4d;
+    --ym-ink-dan:#9a8778; --ym-ink-qing:#c6b7aa;
+    --ym-accent:#a14b34; --ym-gold:#b08a49; --ym-support:#6b7f6a; --ym-danger:#8e4332;
+    --ym-line:#e7ddcd;
+  }
+  html,body{height:100%}
+  body{
+    background:var(--ym-bg);
+    color:var(--ym-ink-nong);
+    font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Source Han Sans SC",system-ui,sans-serif;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #clay{position:fixed;inset:0;display:block}
+
+  /* ---------- 品牌 ---------- */
+  .brand{position:fixed;left:38px;top:28px;display:flex;gap:12px;align-items:center;pointer-events:none;z-index:5}
+  .brand-mark{
+    width:26px;height:26px;border-radius:50%;flex:none;
+    background:conic-gradient(from 210deg,var(--ym-accent),var(--ym-gold),var(--ym-support),var(--ym-ink-dan),var(--ym-accent));
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.55),0 3px 8px -4px rgba(120,96,70,.6);
+  }
+  .brand h1{font-size:16px;font-weight:600;letter-spacing:.28em;color:var(--ym-ink-nong)}
+  .brand p{font-size:11px;color:var(--ym-ink-dan);letter-spacing:.06em;margin-top:3px}
+
+  /* ---------- 右上角小显示屏 ---------- */
+  .monitor{
+    position:fixed;right:30px;top:76px;width:242px;z-index:6;
+    background:rgba(255,249,240,.92);
+    border:1px solid var(--ym-line);border-radius:14px;padding:10px;
+    box-shadow:0 14px 32px -22px rgba(120,96,70,.55);
+    backdrop-filter:blur(6px);
+    cursor:move;user-select:none;
+  }
+  .monitor-bar{display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+  .rec{opacity:0;transition:.3s;display:inline-block}
+  .rec::before{content:'';display:block;width:7px;height:7px;border-radius:50%;background:var(--ym-danger);box-shadow:0 0 5px rgba(142,67,50,.8)}
+  .rec.on{opacity:1;animation:blink 1.5s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+  .screen{position:relative;width:100%;aspect-ratio:4/3;background:#0e0c0a;border-radius:9px;overflow:hidden}
+  .screen video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+  .diag{
+    padding:6px 11px 8px;font-size:10px;line-height:1.55;color:var(--ym-ink-dan);
+    border-top:1px solid #f0e6d8;background:var(--ym-surface);letter-spacing:.02em;
+  }
+  .diag b{font-weight:600;color:var(--ym-ink-zhong)}
+  .diag .ok{color:var(--ym-support)}
+  .diag .warn{color:var(--ym-gold)}
+  .diag .bad{color:var(--ym-danger)}
+  .diag .row{display:flex;align-items:center;gap:6px}
+  .diag .row .sp{margin-left:auto}
+  .btn-mini{padding:4px 9px;font-size:10px}
+  .screen canvas{position:absolute;inset:0;width:100%;height:100%}
+  .screen-off{
+    position:absolute;inset:0;background:#0f0d0b;z-index:3;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+    color:#786d62;font-size:11px;letter-spacing:.05em;transition:opacity .55s ease;text-align:center;padding:0 12px;
+  }
+  .screen-off .power{font-size:15px;color:#5d544b}
+  .screen-off.hide{opacity:0;pointer-events:none}
+
+  .monitor-foot{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:9px;width:100%}
+  .mf-line{font-size:11px;line-height:1.5;color:var(--ym-ink-zhong);text-align:left;width:100%;word-break:break-word}
+  .mf-line#handCount{font-weight:600;color:var(--ym-ink-nong)}
+  .mf-line#gestureText{color:var(--ym-ink-zhong)}
+  .dim{color:var(--ym-ink-dan);font-size:10px;flex:none}
+
+  /* ---------- 左侧工艺工坊面板 ---------- */
+  .workshop{
+    position:fixed;left:30px;top:50%;transform:translateY(-50%);
+    width:262px;max-height:min(76vh,calc(100vh - 230px));z-index:6;display:flex;flex-direction:column;
+    background:rgba(255,249,240,.94);border:1px solid var(--ym-line);border-radius:14px;
+    box-shadow:0 14px 32px -22px rgba(120,96,70,.55);backdrop-filter:blur(6px);
+  }
+  .ws-head{display:flex;align-items:center;gap:8px;padding:11px 13px 9px;border-bottom:1px solid #f2e8db}
+  .ws-title{font-size:11px;letter-spacing:.22em;color:var(--ym-ink-dan)}
+  .ws-stage{
+    margin-left:auto;font-size:11px;font-weight:600;color:var(--ym-accent);
+    background:#f3e7d8;border:1px solid #e3cdb4;border-radius:999px;padding:2px 9px;white-space:nowrap;
+  }
+  /* 步骤导航条 */
+  .ws-rail{display:flex;flex-direction:column;gap:2px;padding:8px 9px;border-bottom:1px solid #f2e8db;max-height:34vh;overflow-y:auto}
+  .ws-rail::-webkit-scrollbar{width:6px}
+  .ws-rail::-webkit-scrollbar-thumb{background:#e7dac9;border-radius:3px}
+  .ws-step{display:flex;align-items:center;gap:8px;width:100%;text-align:left;font:inherit;background:transparent;border:1px solid transparent;border-radius:9px;padding:6px 7px;cursor:pointer;color:var(--ym-ink-zhong)}
+  .ws-step:hover{background:#f6efe5}
+  .ws-step .ws-step-no{width:18px;height:18px;flex:none;border-radius:50%;background:#ece0d1;color:var(--ym-ink-dan);font-size:10px;line-height:18px;text-align:center;font-weight:600}
+  .ws-step .ws-step-tx{flex:1;min-width:0}
+  .ws-step .ws-step-tx b{font-size:12px;color:var(--ym-ink-nong);display:block}
+  .ws-step .ws-step-tx em{font-style:normal;font-size:9.5px;color:var(--ym-ink-dan);display:block;line-height:1.4;margin-top:1px}
+  .ws-step.on{background:#fdf3ea;border-color:#e8cfb0}
+  .ws-step.on .ws-step-no{background:var(--ym-accent);color:#fff}
+  .ws-step.on .ws-step-tx b{color:var(--ym-accent)}
+  .ws-body{padding:11px 13px 13px;overflow-y:auto;flex:1}
+  .ws-body::-webkit-scrollbar{width:6px}
+  .ws-body::-webkit-scrollbar-thumb{background:#e7dac9;border-radius:3px}
+
+  .ws-h{font-size:10px;letter-spacing:.18em;color:var(--ym-ink-dan);margin:2px 0 8px}
+  .ws-h.mt{margin-top:15px}
+  .ws-grid{display:flex;flex-wrap:wrap;gap:5px}
+  .ws-chip{
+    font:inherit;font-size:11px;padding:5px 9px;border-radius:8px;cursor:pointer;
+    border:1px solid #e8dccb;background:#fffdf9;color:var(--ym-ink-zhong);white-space:nowrap;
+  }
+  .ws-chip:hover{background:#f7ede1;border-color:#dcc9b2}
+  .ws-chip.on{background:#f0ddc9;border-color:#d8bd9a;color:#7a3f2c;font-weight:600}
+  .ws-note{font-size:10.5px;line-height:1.6;color:var(--ym-ink-dan);margin-top:7px}
+  .ws-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .ws-row label{font-size:11px;color:var(--ym-ink-zhong);width:50px;flex:none}
+  .ws-row .val{font-size:11px;color:var(--ym-accent);min-width:60px;text-align:right;flex:none;font-variant-numeric:tabular-nums}
+  .ws-row input[type=range]{flex:1;min-width:0;-webkit-appearance:none;appearance:none;height:3px;border-radius:2px;background:var(--ym-line);outline:none}
+  .ws-row input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:12px;height:12px;border-radius:50%;
+    background:var(--ym-accent);border:1px solid #fff;box-shadow:0 1px 3px rgba(120,96,70,.4);cursor:pointer;
+  }
+  .ws-row.wide label{width:66px}
+  /* 气质滑条：两端词贴近滑条，当前所偏一端高亮 */
+  .ws-row.temper{gap:4px;margin-bottom:7px}
+  .ws-row.temper label.ep{width:auto;flex:none;font-size:10.5px;color:var(--ym-ink-dan);padding:0 1px}
+  .ws-row.temper label.ep.on{color:var(--ym-accent);font-weight:600}
+  .ws-card{
+    border:1px solid #eee3d5;border-radius:9px;padding:8px 9px;margin-bottom:6px;
+    cursor:pointer;background:#fffdf9;
+  }
+  .ws-card:hover{background:#faf3e9}
+  .ws-card.on{border-color:#d8bd9a;background:#fdf5ea}
+  .ws-card b{font-size:11.5px;color:var(--ym-ink-nong);display:block}
+  .ws-card em{font-style:normal;font-size:10px;color:var(--ym-ink-dan);display:block;margin-top:2px}
+  .ws-card p{font-size:10px;line-height:1.55;color:var(--ym-ink-dan);margin-top:4px}
+  .ws-swatches{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:3px}
+  .ws-sw{width:26px;height:26px;border-radius:6px;cursor:pointer;border:1px solid rgba(120,96,70,.18)}
+  .ws-sw.on{outline:2px solid var(--ym-accent);outline-offset:1px}
+  .ws-act{
+    display:flex;gap:8px;align-items:flex-start;padding:7px 8px;border-radius:9px;
+    border:1px solid #f0e6d8;background:#fffdf9;margin-bottom:5px;
+  }
+  .ws-act.on{border-color:#e5cdac;background:#fdf6ec}
+  .ws-act .ic{
+    width:20px;height:20px;flex:none;border-radius:6px;background:#f3e6d6;color:var(--ym-accent);
+    font-size:11px;line-height:20px;text-align:center;
+  }
+  .ws-act .tx b{font-size:11.5px;color:var(--ym-ink-nong);display:block}
+  .ws-act .tx span{font-size:10px;line-height:1.5;color:var(--ym-ink-dan);display:block;margin-top:2px}
+  .ws-prog{height:3px;border-radius:2px;background:var(--ym-line);overflow:hidden;margin:7px 0 9px}
+  .ws-prog i{display:block;height:100%;background:var(--ym-accent);width:0;transition:width .2s}
+  .ws-rep{margin-bottom:10px}
+  .ws-rep b{font-size:11px;color:var(--ym-accent);display:block;margin-bottom:3px}
+  .ws-rep span{font-size:10.5px;line-height:1.65;color:var(--ym-ink-zhong)}
+  .ws-warn{
+    font-size:10px;line-height:1.55;color:var(--ym-danger);background:#fdf2ec;
+    border:1px solid #f3ddd0;border-radius:8px;padding:6px 8px;margin-top:6px;
+  }
+  .ws-ok{font-size:10px;line-height:1.55;color:var(--ym-support);background:#f4f8ee;border:1px solid #e2ebd5;border-radius:8px;padding:6px 8px;margin-top:6px}
+  .ws-nav{display:flex;gap:8px;margin-top:12px}
+  .ws-nav .btn{flex:1;min-width:0;justify-content:center}
+  .tip{margin-top:20px;font-size:11px;line-height:1.75;color:var(--ym-ink-dan);border-top:1px solid var(--ym-line);padding-top:13px}
+
+  /* ---------- 底部 HUD ---------- */
+  .hud{
+    position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:6;
+    display:flex;align-items:center;gap:24px;padding:12px 20px;
+    background:rgba(255,249,240,.9);border:1px solid var(--ym-line);border-radius:16px;
+    box-shadow:0 16px 34px -26px rgba(120,96,70,.6);backdrop-filter:blur(6px);
+  }
+  .hud-label{font-size:10px;color:var(--ym-ink-dan);letter-spacing:.16em;display:block;margin-bottom:4px}
+  .hud-value{font-size:13px;color:var(--ym-ink-nong);font-weight:600;letter-spacing:.02em;white-space:nowrap}
+  .meters{display:flex;gap:16px}
+  .meter{width:74px}
+  .meter span{font-size:10px;color:var(--ym-ink-dan);letter-spacing:.1em;display:block;margin-bottom:5px}
+  .meter i{display:block;height:3px;border-radius:2px;background:var(--ym-line);overflow:hidden}
+  .meter b{display:block;height:100%;width:0;background:var(--ym-accent);border-radius:2px;transition:width .2s ease}
+  .vessel{width:auto}
+  .vessel b{
+    display:inline-block;font-size:12px;font-weight:600;color:var(--ym-accent);
+    border:1px solid #e3cdb4;border-radius:8px;padding:2px 9px;background:#fdf8f1;min-width:52px;text-align:center;
+    white-space:nowrap;
+  }
+  .hud-actions{display:flex;gap:8px}
+
+  .btn{
+    font:inherit;font-size:12px;padding:7px 14px;border-radius:999px;cursor:pointer;
+    border:1px solid #e0d2c0;background:#fffdf9;color:var(--ym-ink-zhong);transition:.18s ease;
+    white-space:nowrap;flex:none;
+  }
+  .btn:hover{background:#f3e9dc;border-color:#dcc9b2;color:var(--ym-ink-nong)}
+  .btn:active{transform:translateY(1px)}
+  .btn-mini{font-size:11px;padding:5px 12px}
+
+  @media (max-width:1340px){ .workshop{width:250px} }
+  @media (max-width:1120px){ .workshop{display:none} }
+  @media (max-width:820px){
+    .brand{left:20px;top:18px}
+    .brand p{display:none}
+    .monitor{right:14px;top:56px;width:174px}
+    .hud{gap:14px;padding:10px 14px;bottom:14px}
+    .hud-actions{display:none}
+    .meter{width:52px}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="clay"></canvas>
+
+<section class="monitor" id="monitor">
+  <div class="monitor-bar">
+    <span class="rec" id="rec"></span>
+  </div>
+  <div class="screen">
+    <video id="video" playsinline muted autoplay></video>
+    <canvas id="overlay"></canvas>
+    <div class="screen-off" id="screenOff">
+      <span class="power">&#9211;</span>
+      <em style="font-style:normal">摄像头未开启</em>
+      <button class="btn btn-mini" id="btnCam">开启摄像头</button>
+    </div>
+  </div>
+  <div class="monitor-foot">
+    <div class="mf-line" id="handCount">未检测到手部动作</div>
+    <div class="mf-line" id="gestureText">等待手部动作</div>
+  </div>
+</section>
+
+<aside class="workshop" id="workshop">
+  <div class="ws-head">
+    <span class="ws-title">手作流程</span>
+    <span class="ws-stage" id="wsStage">立意</span>
+  </div>
+  <div class="ws-rail" id="wsRail"></div>
+  <div class="ws-body" id="wsBody"></div>
+</aside>
+
+<footer class="hud">
+  <div class="vessel">
+    <span class="hud-label">器型</span>
+    <b id="vesselName">器坯</b>
+  </div>
+  <div class="vessel">
+    <span class="hud-label">泥料</span>
+    <b id="clayName">粗陶砂泥</b>
+  </div>
+  <div class="vessel">
+    <span class="hud-label">呈色</span>
+    <b id="hueName">生坯</b>
+  </div>
+  <div class="meters">
+    <div class="meter"><span>高度</span><i><b id="mH"></b></i></div>
+    <div class="meter"><span>最宽</span><i><b id="mW"></b></i></div>
+    <div class="meter"><span>成形度</span><i><b id="mWk"></b></i></div>
+  </div>
+  <div class="hud-actions">
+    <button class="btn" id="btnView">复位视角</button>
+    <button class="btn" id="btnSpin">暂停转盘</button>
+    <button class="btn" id="btnReset">重新取泥</button>
+    <button class="btn" id="btnSave">保存作品</button>
+  </div>
+</footer>
+
+<script src="./app.js"></script>
+</body>
+</html>
